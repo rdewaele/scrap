@@ -12,11 +12,29 @@ void reportTimings(size_t cache_sz, struct timespec * start, struct timespec * s
 inline unsigned randMinMax(unsigned minimum, unsigned maximum);
 uint32_t * makeRandomWalkArray(size_t size);
 void walkArray(uint32_t * array, size_t size, size_t steps);
+FILE * openCSVlog(const char * filename);
 
-int main() {
+
+int main(int argc, char * argv[]) {
+	FILE *csvlog = NULL;
+
 	// seed random at program startup
 	srand(time(NULL));
 
+	// user wants to log to file? (csv format)
+	switch (argc) {
+		case 0:
+		case 1:
+			break;
+		case 2:
+			csvlog = openCSVlog(argv[argc]);
+			break;
+		default:
+			fprintf(stderr, "Wrong number of arguments! Run %s either with no arguments, or with the filename to save a CSV log to as single argument.\n");
+			exit(EXIT_FAILURE);
+	}
+
+	// benchmarking constants (TODO: extract to arguments of this program)
 	const size_t repetitions = 50;
 	const size_t aaccesses = 1000 * 1000;
 	size_t repetitions_ctr;
@@ -127,4 +145,23 @@ void walkArray(uint32_t * a, size_t sz, size_t steps) {
 	size_t idx = randMinMax(0, sz);
 	while(steps--)
 		idx = a[idx];
+}
+
+// open a file for appending 
+FILE * openCSVlog(const char * filename) {
+	// error handling
+	const char * errprefix = "Error opening CSV log";
+	// +2 for a space character and the null terminator
+	char * errstring = malloc(strlen(errprefix) + strlen(filename) + 2);
+	sprintf(errstring, "%s %s", errprefix, filename);
+
+	// open the file
+	FILE * log = fopen(filename, "a+b");
+	if (!log)
+		perror(errstring);
+	else
+		printf("Writing CSV formatted data to %s\n", filename);
+
+	free(errstring);
+	return log;
 }
