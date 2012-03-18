@@ -1,0 +1,17 @@
+#
+# ~/.bashrc
+#
+
+# If not running interactively, don't do anything
+[[ $- != *i* ]] && return
+
+PS1='[\u@\h \W]\$ '
+
+export SUDO_EDITOR=vim
+export VISUAL=vim
+export EDITOR=vim
+
+alias ls='ls --color=auto'
+alias irc='ssh irc -t screen -x irc'
+alias y='yaourt -Syu'
+alias ys='yaourt -Ss'
