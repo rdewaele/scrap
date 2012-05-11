@@ -1,0 +1,36 @@
+What follows is a list of the subprojects in this repository, and a copy of
+their README information.
+
+arraywalk
+---------
+The arraywalk program creates an array and - you guessed it - walks through it.
+This happens in a pre-encoded random fashion. Pre-encoded so individual
+testcases can be run multiple times for a given array, which eliminates
+variables when calculating average runtimes.
+These tests are run for increasing array sizes, and several pre-encoded
+patterns for each array size.
+Overall, this should give a rather good impression about the influence of
+caches in latency-optimized hardware (e.g. like a CPU, unlike a GPU).
+
+configfiles
+-----------
+'bashrc' - My (currently extremely simple) Arch Linux bashrc.
+'Xdefaults' - Mainly a collection of terminal color schemes.
+
+euclidian_gcd
+-------------
+This is a straightforward way to implement Euclid's greated common divisor
+algorithm. This specific implementation only uses one mathematical operation:
+subtraction.
+
+treecrawler
+-----------
+Here lives a collection of vector images depicting ways of visiting the
+elements of tree-like data structures.
+
+vimrc
+-----
+My personal, hand-baked vimrc. Most notable features are a color scherme that
+I really like (3d party), and a latex plugin (3d party). Other changes include
+mouse support, line numbering, custom status line, smart search, tabwidth of 2,
+etcetera by default.

@@ -1,0 +1,4 @@
+My personal, hand-baked vimrc. Most notable features are a color scherme that
+I really like (3d party), and a latex plugin (3d party). Other changes include
+mouse support, line numbering, custom status line, smart search, tabwidth of 2,
+etcetera by default.
