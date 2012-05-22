@@ -1,0 +1,5 @@
+# compiled executable
+main
+
+# vim swap files
+*.swp
