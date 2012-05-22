@@ -1,5 +1,16 @@
 // Illustrates that the nul byte is chopped off a string literal in some cases.
 
+/* Output on my machine:
+ * -----
+ * B
+ * L
+ * A
+ *
+ * BLA_
+ * -----
+ * (followed by some non-printable characters)
+ */
+
 #include <stdio.h>
 
 int main() {
