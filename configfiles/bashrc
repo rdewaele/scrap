@@ -10,8 +10,11 @@ PS1='[\u@\h \W]\$ '
 export SUDO_EDITOR=vim
 export VISUAL=vim
 export EDITOR=vim
+export PATH=~/Projects/schnapps/install/bin:~/local/bin:$PATH
 
 alias ls='ls --color=auto'
 alias irc='ssh irc -t screen -x irc'
 alias y='yaourt -Syu'
 alias ys='yaourt -Ss'
+
+source ~/.bash_alias
