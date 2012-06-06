@@ -1,4 +1,5 @@
 // Illustrates that the nul byte is chopped off a string literal in some cases.
+// see http://c-faq.com/ansi/nonstrings.html
 
 /* Output on my machine:
  * -----
