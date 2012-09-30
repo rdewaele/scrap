@@ -1,0 +1,176 @@
+!------------------------------------------------------------------------------
+! urxvt
+
+URxvt*geometry:   100x30
+URxvt*font:       xft:Terminus:Pixelsize=12x24
+URxvt*depth:      32
+URxvt*borderless: 1
+URxvt*scrollBar:  false
+URxvt*saveLines:  5000
+URxvt*termName:   rxvt-unicode
+
+URxvt.perl-ext-common: default,matcher
+URxvt.urlLauncher:     firefox
+URxvt.matcher.button:  1
+
+!------------------------------------------------------------------------------
+! xterm
+!
+XTerm*scrollBar: false
+XTerm*utf8:      2
+XTerm*termName:  xterm-256color
+!XTerm*faceName:  xft:Terminus:Pixelsize=12
+XTerm*font:      -*-terminus-medium-r-*-*-14-*-*-*-*-*-*-mik
+
+XTerm*geometry:           100x30
+XTerm*saveLines:          5000
+XTerm*metaSendsEscape:    true
+XTerm*highlightSelection: true
+XTerm*trimSelection:      true
+XTerm*cutNewline:         true
+
+!------------------------------------------------------------------------------
+! uxterm
+!
+UXTerm*scrollBar: false
+UXTerm*utf8:      2
+UXTerm*termName:  xterm-256color
+!UXTerm*faceName:  xft:Terminus:Pixelsize=12
+UXTerm*font:      -*-terminus-medium-r-*-*-14-*-*-*-*-*-*-mik
+
+UXTerm*geometry:           100x30
+UXTerm*saveLines:          5000
+UXTerm*metaSendsEscape:    true
+UXTerm*highlightSelection: true
+UXTerm*trimSelection:      true
+UXTerm*cutNewline:         true
+
+!------------------------------------------------------------------------------
+!Terminal colors
+!
+!Defaults:
+!0, 8: black	!1, 9: red	!2,10: green	!3,11: yellow
+!4,12: blue	!5,13: magenta	!6,14: cyan	!7,15: white
+
+!dmz (https://bbs.archlinux.org/viewtopic.php?pid=431313#p431313)
+!Pnevma1
+!*background:	[85]#000000
+!*foreground:	[100]#ffffff
+!*color0:	#2F2E2D
+!*color8:	#4A4845
+!*color1:	#A36666
+!*color9:	#D78787
+!*color2:	#8FA57E
+!*color10:	#A9BA9C
+!*color3:	#D7AF87
+!*color11:	#E4C9AF
+!*color4:	#7FA5BD
+!*color12:	#A1BDCE
+!*color5:	#C79EC4
+!*color13:	#D7BEDA
+!*color6:	#8ADBB4
+!*color14:	#B1E7DD
+!*color7:	#D0D0D0
+!*color15:	#EFEFEF
+
+!dmz (https://bbs.archlinux.org/viewtopic.php?pid=431313#p431313)
+!Pnevma2 - A heavy mod of the original.
+!*background:	[85]#000000
+!*foreground:	[100]#ffffff
+!*color0:	#2F2E2D
+!*color8:	#4A4845
+!*color1:	#C37561
+!*color9:	#D19485
+!*color2:	#A0A57E
+!*color10:	#B6B99D
+!*color3:	#D1A375
+!*color11:	#DEBC9C
+!*color4:	#7985A3
+!*color12:	#98A1B9
+!*color5:	#AB716D
+!*color13:	#BE918E
+!*color6:	#98B9B1
+!*color14:	#CBE6CB
+!*color7:	#D0D0D0
+!*color15:	#EFEFEF
+
+!anubis2591 (https://bbs.archlinux.org/viewtopic.php?pid=431297#p431297)
+!*background:	#222222
+!*foreground:	#777777
+!*color0:	#222222
+!*color8:	#222222
+!*color1:	#9f6767
+!*color9:	#9f6767
+!*color2:	#92ac68
+!*color10:	#92ac68
+!*color3:	#d0d293
+!*color11:	#d0d293
+!*color4:	#9aacc3
+!*color12:	#9aacc3
+!*color5:	#bb77a4
+!*color13:	#bb77a4
+!*color6:	#77bbb5
+!*color14:	#77bbb5
+!*color7:	#777777
+!*color15:	#777777
+
+!rson451 (https://bbs.archlinux.org/viewtopic.php?pid=431308#p431308)
+!background:	#000000
+!foreground:	#cccccc
+!*color0:	#000000
+!*color1:	#9e1828
+!*color2:	#aece92
+!*color3:	#968a38
+!*color4:	#414171
+!*color5:	#963c59
+!*color6:	#418179
+!*color7:	#bebebe
+!*color8:	#666666
+!*color9:	#cf6171
+!*color10:	#c5f779
+!*color11:	#fff796
+!*color12:	#4186be
+!*color13:	#cf9ebe
+!*color14:	#71bebe
+!*color15:	#ffffff
+
+!grte (https://bbs.archlinux.org/viewtopic.php?pid=431480#p431480)
+!*background:	#555244
+!*foreground:	white
+!*color0:	#131212
+!*color8:	#474747
+!*color1:	#472323
+!*color9:	#5c2929
+!*color2:	#299E1B
+!*color10:	#77E768
+!*color3:	#96833F
+!*color11:	#D0B249
+!*color4:	#2467AD
+!*color12:	#6B90EE
+!*color5:	#655272
+!*color13:	#9F75BA
+!*color6:	#92B19E
+!*color14:	#A1CDCD
+!*color7:	#FFFFFF
+!*color15:	#97927C
+
+!robbe
+*background: black
+*foreground: white
+
+*color0:  #58584e
+*color8:  #878777
+*color1:  #cf3838
+*color9:  #ee9999
+*color2:  #299e1b
+*color10: #77e768
+*color3:  #aead10
+*color11: #dedd15
+*color4:  #4459c0
+*color12: #8f9cdc
+*color5:  #8b40ae
+*color13: #c979ff
+*color6:  #009999
+*color14: #00ebeb
+*color7:  #c0ba9e
+*color15: #f5f5f5
