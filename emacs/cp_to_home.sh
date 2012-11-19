@@ -13,3 +13,10 @@ rm -rf ~/.emacs ~/.emacs.d
 cp $DIR/emacs ~/.emacs
 cp -r $DIR/emacs.d ~/.emacs.d
 cd ~/.emacs.d/site-lisp && git clone git://github.com/haskell/haskell-mode.git
+
+echo "The Haskell mode can use stylish-haskell to indent code."
+echo "Note that this library directly or indirectly depends on the 'happy' package. Please install it prior to continuing with this script."
+read -p "Would you like to install this library through cabal? [Y/n]" cabalrun
+if ( [ "$cabalrun" = "n" ] || [ "$cabalrun" = "N" ] ); then exit 1; fi
+cabal update
+cabal install stylish-haskell
