@@ -1,12 +1,30 @@
+;; --- disable toolbar --- ;;
+
+(tool-bar-mode -1)
+
+
+;; --- increased agility for window switching
+
 (global-set-key (kbd "M-<left>") 'windmove-left)
 (global-set-key (kbd "M-<right>") 'windmove-right)
 (global-set-key (kbd "M-<up>") 'windmove-up)
 (global-set-key (kbd "M-<down>") 'windmove-down)
 
-;; --- Haskell mode --- ;;
 
-(setenv "PATH" (concat (getenv "PATH") ":~/.cabal/bin"))
-(setq exec-path (append exec-path '("~/.cabal/bin")))
+;; --- indent whole buffer
+
+(defun iwb () ;;http://emacsblog.org/2007/01/17/indent-whole-buffer/
+	"indent whole buffer"
+	(interactive)
+	(delete-trailing-whitespace)
+	(indent-region (point-min) (point-max) nil)
+	(untabify (point-min) (point-max)))
+
+
+;; --- Haskell mode configuration
+
+(setenv "PATH" (concat (getenv "PATH") ":" (concat (getenv "HOME")) "/.cabal/bin"))
+(setq exec-path (append exec-path (list (concat (getenv "HOME") "/.cabal/bin"))))
 
 (add-to-list 'load-path "~/.emacs.d/site-lisp")
 (add-to-list 'load-path "~/.emacs.d/site-lisp/haskell-mode")
@@ -15,6 +33,7 @@
 ;; Customization
 (custom-set-variables
  ;; Use cabal-dev for the GHCi session. Ensures our dependencies are in scope.
+ ;; -- or not, cabal-dev is broken
  '(haskell-process-type 'ghci)
  
  ;; Use notify.el (if you have it installed) at the end of running
@@ -58,8 +77,8 @@
   (define-key haskell-mode-map (kbd "C-c C-i") 'haskell-process-do-info)
 
   ;; Contextually do clever things on the space key, in particular:
-  ;; 1. Complete imports, letting you choose the module name.
-  ;; 2. Show the type of the symbol after the space.
+  ;;   1. Complete imports, letting you choose the module name.
+  ;;   2. Show the type of the symbol after the space.
   (define-key haskell-mode-map (kbd "SPC") 'haskell-mode-contextual-space)
 
   ;; Jump to the imports. Keep tapping to jump between import
@@ -68,10 +87,6 @@
 
   ;; Jump to the definition of the current symbol.
   (define-key haskell-mode-map (kbd "M-.") 'haskell-mode-tag-find)
-
-  ;; Save the current buffer and generate etags (a TAGS file) for the
-  ;; whole project.
-  (define-key haskell-mode-map (kbd "C-x C-s") 'haskell-mode-save-buffer)
 
   ;; Indent the below lines on columns after the current column.
   (define-key haskell-mode-map (kbd "C-<right>")

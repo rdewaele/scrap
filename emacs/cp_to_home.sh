@@ -24,4 +24,4 @@ if (! [ "$promptanswer" = "n" ] || [ "$promptanswer" = "N" ] ); then cabal insta
 
 echo "The Haskell mode can run 'cabal-dev' instead of just ghci as REPL environment."
 read -p "Would you like to install cabal-dev? [Y/n] "
-if (! [ "$promptanswer" = "n" ] || [ "$promptanswer" = "N" ] ); then cd /tmp && rm -rf cabal-dev && git clone https://github.com/creswick/cabal-dev && cd cabal-dev && cabal configure && cabal build && cabal install; fi
+if (! [ "$promptanswer" = "n" ] || [ "$promptanswer" = "N" ] ); then for i in {HTTP,network,tar,zlib}; do cabal install $i; done; cd /tmp && rm -rf cabal-dev && git clone https://github.com/creswick/cabal-dev && cd cabal-dev && cabal configure && cabal build && cabal install; fi
