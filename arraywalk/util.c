@@ -1,5 +1,7 @@
 #include "util.h"
 
+#include <stdlib.h>
+
 // return a random number ranging from min to max inclusive
 inline unsigned randMinMax(unsigned min, unsigned max) {
 	unsigned ret = min + abs(rand()) % ((max + 1) - min);

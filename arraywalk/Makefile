@@ -1,6 +1,6 @@
 # One could play with compiler optimizations to see whether those have any
 # effect. Expected: not much. ;-)
-CFLAGS=-w -Wall -Wextra -pedantic -g -O0
+CFLAGS=-std=c99 -D_POSIX_C_SOURCE=200809L -W -Wall -Wextra -pedantic -g -O0
 # Link with liblrt for timing events.
 LDFLAGS=-lrt
 

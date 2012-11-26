@@ -2,11 +2,9 @@
 #include "arraywalk.h"
 
 #include <errno.h>
-#include <assert.h>
-#include <math.h>
 #include <stdio.h>
-#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <inttypes.h>
 
@@ -35,19 +33,19 @@ int main(int argc, char * argv[]) {
 			csvlog = openCSVlog(argv[argc]);
 			break;
 		default:
-			fprintf(stderr, "Wrong number of arguments! Run %s either with no arguments, or with the filename to save a CSV log to as single argument.\n");
+			fprintf(stderr, "Wrong number of arguments! Run %s either with no arguments, or with the filename to save a CSV log to as single argument.\n", *argv);
 			exit(EXIT_FAILURE);
 	}
 
 	// benchmarking constants (TODO: extract to arguments of this program)
 	// repeat each test instance
-	const size_t repetitions = 50;
+	const size_t repetitions = 5;
 	// number of array accesses to be performed
 	const size_t aaccesses = 1000 * 1000;
 	// linear increment step
-	const size_t array_incstep = 4 * 1024; // 4KiB steps
+	const size_t array_incstep = 1 * 1024; // 4KiB steps
 	// amount of increments to test
-	size_t array_increments = 2 * 1024; // 8MiB when incstep is 4KiB
+	size_t array_increments = 8 * 1024; // 8MiB when incstep is 1KiB
 
 	// bookkeeping variables
 	size_t repetitions_ctr;
@@ -86,7 +84,7 @@ int main(int argc, char * argv[]) {
 		new_avg = totalnsec / repetitions;
 		//XXX first time around, division by zero OK in double context (-> NaN or +-Inf)
 		delta = ((double)new_avg - (double)old_avg) / (double)old_avg;
-		printf(">>>\t%"PRIuLEAST64" usec | delta %+2.2lf\% (%"PRIuLEAST64" -> %"PRIuLEAST64")\n\n", new_avg / 1000, delta, old_avg, new_avg);
+		printf(">>>\t%"PRIuLEAST64" usec | delta %+2.2lf%% (%"PRIuLEAST64" -> %"PRIuLEAST64")\n\n", new_avg / 1000, delta, old_avg, new_avg);
 		old_avg = new_avg;
 
 		freeWalkArray(array);

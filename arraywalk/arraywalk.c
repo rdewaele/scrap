@@ -70,7 +70,8 @@ void freeWalkArray(struct walkArray * array) {
 struct timespec walkArray(struct walkArray * array, size_t steps) {
 	struct timespec elapsed;
 	walking_t * a = array->array;
-	size_t idx = randMinMax(0, array->len);
+	// make idx volatile to deny code emission by compiler optimizations
+	volatile size_t idx = randMinMax(0, array->len);
 
 	TIGHTLY_TIMED(while(steps--) { idx = a[idx]; }, elapsed);
 	return elapsed;
