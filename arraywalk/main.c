@@ -2,6 +2,7 @@
 #include "arraywalk.h"
 
 #include <errno.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,21 +40,23 @@ int main(int argc, char * argv[]) {
 
 	// benchmarking constants (TODO: extract to arguments of this program)
 	// repeat each test instance
-	const size_t repetitions = 5;
+	const size_t repetitions = 20;
 	// number of array accesses to be performed
 	const size_t aaccesses = 1000 * 1000;
 	// linear increment step
-	const size_t array_incstep = 1 * 1024; // 4KiB steps
+	const size_t array_incstep = 512;
 	// amount of increments to test
 	size_t array_increments = 8 * 1024; // 8MiB when incstep is 1KiB
 
 	// bookkeeping variables
+	uint_least64_t timings[repetitions];
 	size_t repetitions_ctr;
 	struct timespec elapsed;
 	uint_least64_t totalnsec;
-	uint_least64_t old_avg = 0;
 	uint_least64_t new_avg = 0;
+	uint_least64_t old_avg = 0;
 	double delta;
+	double stddev;
 	size_t array_sz = 0;
 	struct walkArray * array;
 
@@ -66,27 +69,44 @@ int main(int argc, char * argv[]) {
 		// array creation (timed)
 		totalnsec = 0;
 		elapsed = makeRandomWalkArray(array_sz, &array);
-		totalnsec += 1000 * 1000 * 1000 * elapsed.tv_sec;
-		totalnsec += elapsed.tv_nsec;
+		totalnsec += 1000 * 1000 * 1000 * elapsed.tv_sec + elapsed.tv_nsec;
 		printf("%.6lu KiB (= %lu elements) randomized in %"PRIuLEAST64" usec | %lu reads:\n",
 				array_sz / 1024, array_sz / sizeof(walking_t), totalnsec / 1000, aaccesses);
 
 		// test each case 'repetions' times (timed)
 		repetitions_ctr = repetitions;
-		totalnsec = 0;
 		while (repetitions_ctr--) {
 			elapsed = walkArray(array, aaccesses);
-
-			totalnsec += 1000 * 1000 * 1000 * elapsed.tv_sec;
-			totalnsec += elapsed.tv_nsec;
+			timings[repetitions_ctr] = 1000 * 1000 * 1000 * elapsed.tv_sec + elapsed.tv_nsec;
 		}
-		// calculate an average and a standard deviation
-		new_avg = totalnsec / repetitions;
-		//XXX first time around, division by zero OK in double context (-> NaN or +-Inf)
-		delta = ((double)new_avg - (double)old_avg) / (double)old_avg;
-		printf(">>>\t%"PRIuLEAST64" usec | delta %+2.2lf%% (%"PRIuLEAST64" -> %"PRIuLEAST64")\n\n", new_avg / 1000, delta, old_avg, new_avg);
-		old_avg = new_avg;
 
+		// average
+		totalnsec = 0;
+		repetitions_ctr = repetitions;
+		while (repetitions_ctr--)
+			totalnsec += timings[repetitions_ctr];
+		// XXX whole division should be OK: timings are in the millions of nsec
+		new_avg = totalnsec / repetitions;
+
+		// standard deviation
+		totalnsec = 0;
+		repetitions_ctr = repetitions;
+		while (repetitions_ctr--) {
+			uint_least64_t current = timings[repetitions_ctr];
+			current = current > new_avg ? current - new_avg : new_avg - current;
+			totalnsec += current * current;
+		}
+		stddev = sqrt(totalnsec / repetitions);
+	
+		// new average versus old average delta
+		delta = 100.0 * ((double)new_avg - (double)old_avg) / (double)old_avg;
+
+		// report results
+		printf(">>>\t%"PRIuLEAST64" usec | delta %+2.2lf%% (%"PRIuLEAST64" -> %"PRIuLEAST64") | stddev %ld usec (%2.2lf%%)\n\n",
+				new_avg / 1000, delta, old_avg, new_avg, lround(stddev / 1000), 100 * stddev / new_avg);
+
+		// prepare for next test instance
+		old_avg = new_avg;
 		freeWalkArray(array);
 	}
 
@@ -94,6 +114,7 @@ int main(int argc, char * argv[]) {
 }
 
 // open a file for appending 
+// TODO: complete this feature
 FILE * openCSVlog(const char * filename) {
 	// error handling
 	const char * errprefix = "Error opening CSV log";

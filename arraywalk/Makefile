@@ -1,13 +1,16 @@
 # One could play with compiler optimizations to see whether those have any
-# effect. Expected: not much. ;-)
-CFLAGS=-std=c99 -D_POSIX_C_SOURCE=200809L -W -Wall -Wextra -pedantic -g -O0
+# effect.
+CFLAGS=-std=c99 -D_POSIX_C_SOURCE=200809L -W -Wall -Wextra -pedantic -g -O3 -funroll-loops
 # Link with liblrt for timing events.
-LDFLAGS=-lrt
+LDFLAGS=-lrt -lm
+
+SOURCES=main.c arraywalk.c util.c
+OBJECTS=$(SOURCES:.c=.o)
 
 # Default target is main, rest is handled by GNU Make builtin rules.
 all: main
 
-main: main.c arraywalk.c util.c
+main: $(SOURCES)
 
 # Some housekeeping does no harm.
 clean:
