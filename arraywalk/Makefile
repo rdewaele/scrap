@@ -7,6 +7,8 @@ LDFLAGS=-lrt
 # Default target is main, rest is handled by GNU Make builtin rules.
 all: main
 
+main: main.c arraywalk.c util.c
+
 # Some housekeeping does no harm.
 clean:
 	rm -f main
