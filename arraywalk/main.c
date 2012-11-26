@@ -55,7 +55,6 @@ int main(int argc, char * argv[]) {
 	uint_least64_t totalnsec;
 	uint_least64_t new_avg = 0;
 	uint_least64_t old_avg = 0;
-	double delta;
 	double stddev;
 	size_t array_sz = 0;
 	struct walkArray * array;
@@ -98,12 +97,14 @@ int main(int argc, char * argv[]) {
 		}
 		stddev = sqrt(totalnsec / repetitions);
 	
-		// new average versus old average delta
-		delta = 100.0 * ((double)new_avg - (double)old_avg) / (double)old_avg;
-
 		// report results
-		printf(">>>\t%"PRIuLEAST64" usec | delta %+2.2lf%% (%"PRIuLEAST64" -> %"PRIuLEAST64") | stddev %ld usec (%2.2lf%%)\n\n",
-				new_avg / 1000, delta, old_avg, new_avg, lround(stddev / 1000), 100 * stddev / new_avg);
+		printf(">>>\t%"PRIuLEAST64" usec"
+				" | delta %+2.2lf%% (%"PRIuLEAST64" -> %"PRIuLEAST64")"
+				" | stddev %ld usec (%2.2lf%%)\n\n",
+				new_avg / 1000,
+				100 * ((double)new_avg - old_avg) / old_avg, old_avg, new_avg,
+				lround(stddev / 1000), 100 * stddev / new_avg
+				);
 
 		// prepare for next test instance
 		old_avg = new_avg;
