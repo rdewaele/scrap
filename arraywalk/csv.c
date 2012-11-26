@@ -26,6 +26,9 @@ FILE * CSV_OpenLog(const char * filename) {
 	return log;
 }
 
-void CSV_LogTimings(FILE * log, size_t sz, uint_least64_t nsec, uint_least64_t stddev) {
-	fprintf(log, "%zu,%"PRIuLEAST64",%"PRIuLEAST64"\n", sz, nsec, stddev);
+typedef uint_least64_t nsec_t;
+void CSV_LogTimings(FILE * log, struct walkArray * wa, nsec_t nsec, nsec_t stddev) {
+	fprintf(log,
+			"%zu,%"PRIuLEAST64",%"PRIuLEAST64"\n",
+			wa->size, nsec, stddev);
 }

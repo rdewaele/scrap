@@ -13,12 +13,6 @@
 // TODO: autodection
 #define CLOCK_FREQ 2.2 
 
-// forward declarations
-int main();
-FILE * CSV_OpenLog(const char * filename);
-void CSV_LogTimings(FILE * log, size_t sz, uint_least64_t nsec, uint_least64_t stddev);
-
-
 // program entry point
 int main(int argc, char * argv[]) {
 	FILE *csvlog = NULL;
@@ -70,12 +64,17 @@ int main(int argc, char * argv[]) {
 		totalnsec = 0;
 		elapsed = makeRandomWalkArray(array_len, &array);
 		totalnsec += 1000 * 1000 * 1000 * elapsed.tv_sec + elapsed.tv_nsec;
-		printf("%.6lu KiB (= %lu elements) randomized in %"PRIuLEAST64" usec | %lu reads:\n",
-				array->size / 1024,
+		if (array->size < 1024)
+			printf("%.6lu B", array->size);
+		else
+			printf("%.6lu KiB", array->size / 1024);
+		printf(" (= %lu elements) randomized in %"PRIuLEAST64" usec | %lu reads:\n",
 				array->len,
 				totalnsec / 1000,
 				aaccesses);
 
+		// test case warmup (helps reducing variance)
+		(void) walkArray(array, aaccesses);
 		// test each case 'repetions' times (timed)
 		repetitions_ctr = repetitions;
 		while (repetitions_ctr--) {
@@ -103,7 +102,7 @@ int main(int argc, char * argv[]) {
 	
 		// report results
 		if (csvlog)
-			CSV_LogTimings(csvlog, array_len, new_avg, lround(stddev));
+			CSV_LogTimings(csvlog, array, new_avg, lround(stddev));
 
 		printf(">>>\t%"PRIuLEAST64" usec"
 				" | delta %+2.2lf%% (%"PRIuLEAST64" -> %"PRIuLEAST64")"
