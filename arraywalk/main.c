@@ -1,6 +1,7 @@
 #include "util.h"
 #include "arraywalk.h"
 #include "csv.h"
+#include "options.h"
 
 #include <errno.h>
 #include <math.h>
@@ -15,6 +16,7 @@
 
 // program entry point
 int main(int argc, char * argv[]) {
+	struct options options = options_parse(argc, argv);
 	FILE *csvlog = NULL;
 
 	// seed random at program startup
