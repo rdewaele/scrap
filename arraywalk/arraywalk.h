@@ -6,9 +6,10 @@
 // The type of the elements of walkarrays.
 typedef uint32_t walking_t;
 
-// Walkarrays know their length.
+// Walkarrays know their length. (And for convenience, their size in bytes.)
 struct walkArray {
 	size_t len;
+	size_t size;
 	walking_t * array;
 };
 

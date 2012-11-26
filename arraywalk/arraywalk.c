@@ -29,7 +29,8 @@
 // TODO: check return values (malloc, ..)
 struct timespec makeRandomWalkArray(size_t len, struct walkArray ** result) {
 	struct timespec elapsed;
-	walking_t * array = malloc(sizeof(walking_t) * len);
+	size_t size = sizeof(walking_t) * len;
+	walking_t * array = malloc(size);
 	size_t i;
 
 	// initialization step encodes index as values
@@ -55,6 +56,7 @@ struct timespec makeRandomWalkArray(size_t len, struct walkArray ** result) {
 
 	*result = malloc(sizeof(struct walkArray));
 	(*result)->array = array;
+	(*result)->size = size;
 	(*result)->len = len;
 
 	return elapsed;

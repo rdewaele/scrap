@@ -1,5 +1,6 @@
 #include "util.h"
 #include "arraywalk.h"
+#include "csv.h"
 
 #include <errno.h>
 #include <math.h>
@@ -14,8 +15,8 @@
 
 // forward declarations
 int main();
-void reportTimings(size_t cache_sz, struct timespec * start, struct timespec * stop);
-FILE * openCSVlog(const char * filename);
+FILE * CSV_OpenLog(const char * filename);
+void CSV_LogTimings(FILE * log, size_t sz, uint_least64_t nsec, uint_least64_t stddev);
 
 
 // program entry point
@@ -31,7 +32,7 @@ int main(int argc, char * argv[]) {
 		case 1:
 			break;
 		case 2:
-			csvlog = openCSVlog(argv[1]);
+			csvlog = CSV_OpenLog(argv[1]);
 			break;
 		default:
 			fprintf(stderr, "Wrong number of arguments! Run %s either with no arguments, or with the filename to save a CSV log to as single argument.\n", *argv);
@@ -40,11 +41,11 @@ int main(int argc, char * argv[]) {
 
 	// benchmarking constants (TODO: extract to arguments of this program)
 	// repeat each test instance
-	const size_t repetitions = 20;
+	const size_t repetitions = 50;
 	// number of array accesses to be performed
-	const size_t aaccesses = 1000 * 1000;
-	// linear increment step
-	const size_t array_incstep = 512;
+	const size_t aaccesses = 3 * 1024 * 1024;
+	// linear increment step in elements
+	const size_t array_incstep = 64;
 	// amount of increments to test
 	size_t array_increments = 8 * 1024; // 8MiB when incstep is 1KiB
 
@@ -56,7 +57,7 @@ int main(int argc, char * argv[]) {
 	uint_least64_t new_avg = 0;
 	uint_least64_t old_avg = 0;
 	double stddev;
-	size_t array_sz = 0;
+	size_t array_len = 0;
 	struct walkArray * array;
 
 	// print timer resolution
@@ -64,13 +65,16 @@ int main(int argc, char * argv[]) {
 	printf("Timer resolution: %ld seconds, %lu nanoseconds\n", elapsed.tv_sec, elapsed.tv_nsec);
 
 	// test for increasing cache sizes
-	while((array_sz += array_incstep), array_increments--) {
+	while((array_len += array_incstep), array_increments--) {
 		// array creation (timed)
 		totalnsec = 0;
-		elapsed = makeRandomWalkArray(array_sz, &array);
+		elapsed = makeRandomWalkArray(array_len, &array);
 		totalnsec += 1000 * 1000 * 1000 * elapsed.tv_sec + elapsed.tv_nsec;
 		printf("%.6lu KiB (= %lu elements) randomized in %"PRIuLEAST64" usec | %lu reads:\n",
-				array_sz / 1024, array_sz / sizeof(walking_t), totalnsec / 1000, aaccesses);
+				array->size / 1024,
+				array->len,
+				totalnsec / 1000,
+				aaccesses);
 
 		// test each case 'repetions' times (timed)
 		repetitions_ctr = repetitions;
@@ -98,6 +102,9 @@ int main(int argc, char * argv[]) {
 		stddev = sqrt(totalnsec / repetitions);
 	
 		// report results
+		if (csvlog)
+			CSV_LogTimings(csvlog, array_len, new_avg, lround(stddev));
+
 		printf(">>>\t%"PRIuLEAST64" usec"
 				" | delta %+2.2lf%% (%"PRIuLEAST64" -> %"PRIuLEAST64")"
 				" | stddev %ld usec (%2.2lf%%)\n\n",
@@ -112,24 +119,4 @@ int main(int argc, char * argv[]) {
 	}
 
 	return 0;
-}
-
-// open a file for appending 
-// TODO: complete this feature
-FILE * openCSVlog(const char * filename) {
-	// error handling
-	const char * errprefix = "Error opening CSV log";
-	// +2 for a space character and the null terminator
-	char * errstring = malloc(strlen(errprefix) + strlen(filename) + 2);
-	sprintf(errstring, "%s %s", errprefix, filename);
-
-	// open the file
-	FILE * log = fopen(filename, "a+b");
-	if (!log)
-		perror(errstring);
-	else
-		printf("Writing CSV formatted data to %s\n", filename);
-
-	free(errstring);
-	return log;
 }
