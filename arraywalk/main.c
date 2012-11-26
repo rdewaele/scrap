@@ -31,7 +31,7 @@ int main(int argc, char * argv[]) {
 		case 1:
 			break;
 		case 2:
-			csvlog = openCSVlog(argv[argc]);
+			csvlog = openCSVlog(argv[1]);
 			break;
 		default:
 			fprintf(stderr, "Wrong number of arguments! Run %s either with no arguments, or with the filename to save a CSV log to as single argument.\n", *argv);
