@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdbool.h>
 #include <stdio.h>
 
 struct options {
@@ -9,8 +10,12 @@ struct options {
 	const size_t aaccesses;
 	// the test array grows linearly by this amount (determines granularity)
 	const size_t step;
+	// upper size limit for the benchmark's array
+	const size_t end;
 	// file to write Comma Separated Values to
-	const FILE * csvlog;
+	FILE * csvlog;
+
+	bool Silent;
 };
 
 struct options options_parse(int argc, char * argv[]);
