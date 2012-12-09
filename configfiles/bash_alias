@@ -1,2 +1,5 @@
-alias irc='ssh irc -t screen -x irc' # set irc host in .ssh/config
+alias ls='ls --color=auto'
+alias y='yaourt -Syu'
+alias ys='yaourt -Ss'
+alias irc='ssh irc -t screen -Dx irc' # set irc host in .ssh/config
 alias zzz='sudo pm-suspend'
