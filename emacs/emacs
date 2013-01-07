@@ -21,20 +21,31 @@
 	(untabify (point-min) (point-max)))
 
 
+;; --- Make sure main mode directory can be found
+(add-to-list 'load-path "~/.emacs.d/site-lisp")
+
+;; --- OPA mode configuration
+(add-to-list 'load-path "~/.emacs.d/site-lisp/opa-mode")
+(autoload 'opa-js-mode "opa-js-mode" nil t)
+(autoload 'opa-classic-mode "opa-mode" nil t)
+(add-to-list 'auto-mode-alist '("\\.opa$" . opa-classic-mode)) ;; <-- Set the default mode here
+(add-to-list 'auto-mode-alist '("\\.js\\.opa$" . opa-js-mode))
+(add-to-list 'auto-mode-alist '("\\.classic\\.opa$" . opa-classic-mode))
+
+
 ;; --- Haskell mode configuration
 
 (setenv "PATH" (concat (getenv "PATH") ":" (concat (getenv "HOME")) "/.cabal/bin"))
 (setq exec-path (append exec-path (list (concat (getenv "HOME") "/.cabal/bin"))))
 
-(add-to-list 'load-path "~/.emacs.d/site-lisp")
 (add-to-list 'load-path "~/.emacs.d/site-lisp/haskell-mode")
 (load "haskell-site-file")
 
 ;; Customization
 (custom-set-variables
  ;; Use cabal-dev for the GHCi session. Ensures our dependencies are in scope.
- ;; -- or not, cabal-dev is broken
- '(haskell-process-type 'ghci)
+ ;; -- or not, sometimes, cabal-dev is broken on one of my machines :P
+ '(haskell-process-type 'cabal-dev)
  
  ;; Use notify.el (if you have it installed) at the end of running
  ;; Cabal commands or generally things worth notifying.
