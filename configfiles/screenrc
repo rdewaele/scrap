@@ -1,0 +1,13 @@
+### enable 256 colors
+# from https://wiki.archlinux.org/index.php/GNU_Screen
+
+# general
+term screen-256color
+
+# rxvt unicode
+terminfo rxvt-unicode 'Co#256:AB=\E[48;5;%dm:AF=\E[38;5;%dm'
+
+# xterm
+attrcolor b ".I"    # allow bold colors - necessary for some reason
+termcapinfo xterm 'Co#256:AB=\E[48;5;%dm:AF=\E[38;5;%dm'   # tell screen how to set colors. AB = background, AF=foreground
+defbce on    # use current bg color for erased chars
