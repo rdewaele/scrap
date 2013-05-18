@@ -1,9 +1,9 @@
 # One could play with compiler optimizations to see whether those have any
 # effect.
-CFLAGS=-std=c99 -D_POSIX_C_SOURCE=200809L -W -Wall -Wextra -pedantic -g -O3 -funroll-loops
+CFLAGS := -std=c99 -D_POSIX_C_SOURCE=200809L -W -Wall -Wextra -pedantic -g -O3 -funroll-loops $(CFLAGS)
 #CFLAGS=-std=c99 -D_POSIX_C_SOURCE=200809L -W -Wall -Wextra -pedantic -g -O0
 # Link with liblrt for timing events.
-LDFLAGS=-lrt -lm
+LDFLAGS += -lm -lrt
 
 SOURCES=main.c arraywalk.c util.c csv.c options.c
 OBJECTS=$(SOURCES:.c=.o)

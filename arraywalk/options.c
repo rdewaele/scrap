@@ -41,7 +41,7 @@ struct options options_parse(int argc, char * argv[]) {
 	size_t step = STEP;
 	FILE * csvlog = CSVLOG;
 	size_t end = END;
-	bool Silent;
+	bool Silent = false;
 
 	while (-1 != (opt = getopt(argc, argv, OPTSTR))) {
 		switch (opt) {
