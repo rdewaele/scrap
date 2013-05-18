@@ -4,19 +4,22 @@
 #include "options.h"
 
 #include <errno.h>
+#include <inttypes.h>
 #include <math.h>
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/wait.h>
 #include <time.h>
-#include <inttypes.h>
+#include <unistd.h>
 
 // TODO: autodection
 #define CLOCK_FREQ 2.2 
 
 // user reporting
-void verbose(struct options * options, const char *format, ...) {
+static void verbose(const struct options * options, const char *format, ...) {
 	va_list args;
 	va_start(args, format);
 
@@ -26,15 +29,10 @@ void verbose(struct options * options, const char *format, ...) {
 	va_end(args);
 }
 
-// program entry point
-int main(int argc, char * argv[]) {
-	struct options options = options_parse(argc, argv);
-
-	// seed random at program startup
-	srand(time(NULL));
-
-	// bookkeeping variables
-	uint_least64_t timings[options.repetitions];
+// test for increasing cache sizes
+static void walk(const struct options * options) {
+	// bookkeeping
+	uint_least64_t timings[options->repetitions];
 	size_t repetitions_ctr;
 	struct timespec elapsed;
 	uint_least64_t totalnsec;
@@ -46,57 +44,56 @@ int main(int argc, char * argv[]) {
 
 	// print timer resolution
 	clock_getres(CLOCK_MONOTONIC, &elapsed);
-	verbose(&options, "Timer resolution: %ld seconds, %lu nanoseconds\n",
+	verbose(options, "Timer resolution: %ld seconds, %lu nanoseconds\n",
 			elapsed.tv_sec, elapsed.tv_nsec);
 
-	// test for increasing cache sizes
-	while((array_len += options.step) <= options.end) {
+	while((array_len += options->step) <= options->end) {
 		// array creation (timed)
 		totalnsec = 0;
 		elapsed = makeRandomWalkArray(array_len, &array);
 		totalnsec += 1000 * 1000 * 1000 * elapsed.tv_sec + elapsed.tv_nsec;
 		if (array->size < 1024)
-			verbose(&options, "%.6lu B", array->size);
+			verbose(options, "%.6lu B", array->size);
 		else
-			verbose(&options, "%.6lu KiB", array->size / 1024);
+			verbose(options, "%.6lu KiB", array->size / 1024);
 
-		verbose(&options, " (= %lu elements) randomized in %"PRIuLEAST64" usec | %lu reads:\n",
+		verbose(options, " (= %lu elements) randomized in %"PRIuLEAST64" usec | %lu reads:\n",
 				array->len,
 				totalnsec / 1000,
-				options.aaccesses);
+				options->aaccesses);
 
 		// test case warmup (helps reducing variance)
-		(void) walkArray(array, options.aaccesses);
+		(void) walkArray(array, options->aaccesses);
 		// test each case 'repetions' times (timed)
-		repetitions_ctr = options.repetitions;
+		repetitions_ctr = options->repetitions;
 		while (repetitions_ctr--) {
-			elapsed = walkArray(array, options.aaccesses);
+			elapsed = walkArray(array, options->aaccesses);
 			timings[repetitions_ctr] = 1000 * 1000 * 1000 * elapsed.tv_sec + elapsed.tv_nsec;
 		}
 
 		// average
 		totalnsec = 0;
-		repetitions_ctr = options.repetitions;
+		repetitions_ctr = options->repetitions;
 		while (repetitions_ctr--)
 			totalnsec += timings[repetitions_ctr];
 		// XXX whole division should be OK: timings are in the millions of nsec
-		new_avg = totalnsec / options.repetitions;
+		new_avg = totalnsec / options->repetitions;
 
 		// standard deviation
 		totalnsec = 0;
-		repetitions_ctr = options.repetitions;
+		repetitions_ctr = options->repetitions;
 		while (repetitions_ctr--) {
 			uint_least64_t current = timings[repetitions_ctr];
 			current = current > new_avg ? current - new_avg : new_avg - current;
 			totalnsec += current * current;
 		}
-		stddev = sqrt(totalnsec / options.repetitions);
+		stddev = sqrt(totalnsec / options->repetitions);
 
 		// report results
-		if (options.csvlog)
-			CSV_LogTimings(options.csvlog, array, new_avg, lround(stddev));
+		if (options->csvlog)
+			CSV_LogTimings(options->csvlog, array, new_avg, lround(stddev));
 
-		verbose(&options, ">>>\t%"PRIuLEAST64" usec"
+		verbose(options, ">>>\t%"PRIuLEAST64" usec"
 				" | delta %+2.2lf%% (%"PRIuLEAST64" -> %"PRIuLEAST64")"
 				" | stddev %ld usec (%2.2lf%%)\n\n",
 				new_avg / 1000,
@@ -111,6 +108,41 @@ int main(int argc, char * argv[]) {
 		old_avg = new_avg;
 		freeWalkArray(array);
 	}
+}
+
+// program entry point
+int main(int argc, char * argv[]) {
+	struct options options = options_parse(argc, argv);
+
+	// seed random at program startup
+	srand(time(NULL));
+
+	unsigned nchildren = 0;
+	pid_t pid = 0;
+	for (int i = 0; i < options.processes; ++i) {
+		pid = fork();
+		switch (pid) {
+			case -1:
+				perror("child process creation");
+				break;
+			case 0:
+				// child
+				walk(&options);
+				break;
+			default:
+				// parent
+				++nchildren;
+				continue;
+				break;
+		}
+		// parent process uses 'continue' to finish creating its children
+		break;
+	}
+
+	// parent waits for all successfully created children
+	if (pid)
+		while (nchildren--)
+			wait(NULL);
 
 	return 0;
 }
