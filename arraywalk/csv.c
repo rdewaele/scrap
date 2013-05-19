@@ -6,6 +6,6 @@
 
 void CSV_LogTimings(FILE * log, struct walkArray * wa, nsec_t nsec, nsec_t stddev) {
 	fprintf(log,
-			"%zu,%"PRIuLEAST64",%"PRIuLEAST64"\n",
+			"%zu,%llu,%llu\n",
 			wa->size, nsec, stddev);
 }

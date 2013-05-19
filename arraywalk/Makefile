@@ -1,20 +1,33 @@
+PROGRAM = arraywalk
 # One could play with compiler optimizations to see whether those have any
 # effect.
-CFLAGS := -std=c99 -D_POSIX_C_SOURCE=200809L -W -Wall -Wextra -pedantic -g -O3 -funroll-loops $(CFLAGS)
-#CFLAGS=-std=c99 -D_POSIX_C_SOURCE=200809L -W -Wall -Wextra -pedantic -g -O0
-# Link with liblrt for timing events.
+CFLAGS := -std=c99 -D_POSIX_C_SOURCE=200809L -W -Wall -Wextra -pedantic \
+	-O3 -funroll-loops \
+	-Wconversion -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align \
+	-Wwrite-strings -Wno-aggregate-return \
+	$(CFLAGS)
 LDFLAGS += -lm -lrt
 
-SOURCES=main.c arraywalk.c util.c csv.c options.c
-OBJECTS=$(SOURCES:.c=.o)
+SOURCES = main.c arraywalk.c util.c csv.c options.c
+OBJECTS = $(SOURCES:.c=.o)
 
-# Default target is main, rest is handled by GNU Make builtin rules.
-all: main
+MAKEDEP = .make.dep
 
-main: $(SOURCES)
+all: $(PROGRAM)
 
-# Some housekeeping does no harm.
+$(PROGRAM): $(OBJECTS)
+	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@
+
+# also depend on Makefile because we like to fiddle with it ;-)
+%.o: %.c Makefile
+	$(CC) $(CFLAGS) -c $< -o $@
+
 clean:
-	rm -f main
+	rm -f $(PROGRAM) $(OBJECTS) $(MAKEDEP)
 
 .PHONY: clean
+
+$(MAKEDEP):
+	$(CC) -MM $(CFLAGS) $(SOURCES) > $@
+
+include $(MAKEDEP)

@@ -27,11 +27,12 @@
 // Create a cycle using Sattolo's algorithm. This is the way the array will be
 // traversed in the benchmarks.
 // TODO: check return values (malloc, ..)
-struct timespec makeRandomWalkArray(size_t len, struct walkArray ** result) {
+// TODO: size may overflow if len > (walking_t_max / sizeof(walking_t))
+struct timespec makeRandomWalkArray(walking_t len, struct walkArray ** result) {
 	struct timespec elapsed;
-	size_t size = sizeof(walking_t) * len;
+	walking_t size = (walking_t)sizeof(walking_t) * len;
 	walking_t * array = malloc(size);
-	size_t i;
+	walking_t i;
 
 	// initialization step encodes index as values
 	for (i = 0; i < len; ++i)
@@ -43,8 +44,8 @@ struct timespec makeRandomWalkArray(size_t len, struct walkArray ** result) {
 	//    because element i is swapped with an element > i
 	//  - randMinMax(): the element to be swapped is
 	//    one of the elements following element i
-	size_t rnd;
-	size_t swap;
+	walking_t rnd;
+	walking_t swap;
 	TIGHTLY_TIMED(
 	for (i = 0; i < len - 1; ++i) {
 		rnd = randMinMax(i + 1, len - 1);
@@ -72,8 +73,8 @@ void freeWalkArray(struct walkArray * array) {
 struct timespec walkArray(struct walkArray * array, size_t steps) {
 	struct timespec elapsed;
 	walking_t * a = array->array;
-	// make idx volatile to deny code emission by compiler optimizations
-	volatile size_t idx = randMinMax(0, array->len - 1);
+	// make idx volatile to deny code omission by compiler optimizations
+	volatile walking_t idx = randMinMax(0, array->len - 1);
 
 	TIGHTLY_TIMED(while(steps--) { idx = a[idx]; }, elapsed);
 	/* On my system, gcc -03 generates the following code for the hot loop:

@@ -1,12 +1,15 @@
 #include "options.h"
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <strings.h>
 #include <unistd.h>
 
 // ? h - explicit help request (prevents invalid option warning)
 // (a)accesses
+// (c)reate method
 // (e)nd
 // (l)og
 // (p)rocesses
@@ -14,60 +17,98 @@
 // (s)tep
 //
 // (S)ilent - flag to suppress stdout output
-static const char * OPTSTR = "h?a:e:l:p:r:s:S";
+//
+// (I)nformation about run configuration
+// -> this is a meta option, and not present in the option structure
+static const char * OPTSTR = "h?a:c:e:Il:p:r:s:S";
 
-static const size_t AACCESSES = 4 * 1024 * 1024;
-static const size_t END = 8 * 1024 * 1024;
+static const unsigned AACCESSES = 4 * 1024 * 1024;
+static const enum spawn_type CREATE = TREE;
+static const walking_t END = 8 * 1024 * 1024;
 static FILE * CSVLOG = NULL;
 static const int PROCESSES = 1;
-static const size_t REPETITIONS = 50;
-static const size_t STEP = 4 * 1024;
+static const unsigned REPETITIONS = 50;
+static const walking_t STEP = 4 * 1024;
 static const bool SILENT = false;
 
 static void options_help(const char * name) {
-	fprintf(stderr, "Usage: %s [-a num] [-l file] [-r num] [-s num]\n", name);
+	fprintf(stderr, "Usage: %s [-a num] [-c {tree,linear}] [-e num] [-l file]"
+			" [-p num] [-r num] [-s num] [-S] [-I]\n", name);
 
-	fprintf(stderr, "-a\tarray accesses to perform (default: %zd)\n", AACCESSES);
-	fprintf(stderr, "-e\ttest array maximum size (default: %zd)\n", END);
+	fprintf(stderr, "-a\tarray accesses to perform (default: %u)\n", AACCESSES);
+	fprintf(stderr, "-c\tthread spawn method (default: %s)\n", spawn_typeToString(CREATE));
+	fprintf(stderr, "-e\tmaximum array size (default: %"PRIWALKING")\n", END);
+	fprintf(stderr, "-I\tprint run configuration to stdout at program startup\n");
 	fprintf(stderr, "-l\tlog file to write CSV data to (default: <none>)\n");
 	fprintf(stderr, "-p\tnumber of simultaneous tests to start (default: %u)\n", PROCESSES);
-	fprintf(stderr, "-r\tnumber of times to repeat a single test instance (default: %zd)\n", REPETITIONS);
-	fprintf(stderr, "-s\tincrease test array linearly by this amount (default: %zd)\n", STEP);
+	fprintf(stderr, "-r\tnumber of times to repeat a single test instance (default: %u)\n", REPETITIONS);
+	fprintf(stderr, "-s\tincrease test array linearly by this amount (default: %"PRIWALKING")\n", STEP);
 	fprintf(stderr, "-S\tenable silent mode: no output to stdout (default: %s)\n",
 			SILENT ? "on" : "off");
+}
+
+static void options_print(const struct options * options) {
+	fprintf(stderr,
+			"array accesses to perform: %u\n"
+			"thread spawn method: %s\n"
+			"maximum array size: %"PRIWALKING"\n"
+			"CSV log base name: %s\n"
+			"operating threads: %u\n"
+			"single test configuration repeat: %u\n"
+			"array increment: %"PRIWALKING"\n"
+			"silent mode: %s\n"
+			"\n",
+			options->aaccesses,
+			spawn_typeToString(options->create),
+			options->end,
+			"<none>", //TODO: base name for logs
+			options->processes,
+			options->repetitions,
+			options->step,
+			options->Silent ? "on" : "off"
+			);
 }
 
 // TODO error handling
 struct options options_parse(int argc, char * argv[]) {
 	int opt;
 
-	size_t aaccesses = AACCESSES;
-	size_t end = END;
+	unsigned aaccesses = AACCESSES;
+	enum spawn_type create = CREATE;
+	walking_t end = END;
 	FILE * csvlog = CSVLOG;
-	int processes = PROCESSES;
-	size_t repetitions = REPETITIONS;
-	size_t step = STEP;
+	unsigned processes = PROCESSES;
+	unsigned repetitions = REPETITIONS;
+	walking_t step = STEP;
 	bool Silent = SILENT;
+
+	bool print_configuration = false;
 
 	while (-1 != (opt = getopt(argc, argv, OPTSTR))) {
 		switch (opt) {
 			case 'a':
-				aaccesses = atoll(optarg);
+				aaccesses = (walking_t)atoll(optarg);
+				break;
+			case 'c':
+				create = spawn_typeFromString(optarg);
 				break;
 			case 'e':
-				end = atoll(optarg);
+				end = (walking_t)atoll(optarg);
+				break;
+			case 'I':
+				print_configuration = true;
 				break;
 			case 'l':
 				csvlog = fopen(optarg, "w");
 				break;
 			case 'p':
-				processes = atoi(optarg);
+				processes = (unsigned)atoi(optarg);
 				break;
 			case 'r':
-				repetitions = atoll(optarg);
+				repetitions = (walking_t)atoll(optarg);
 				break;
 			case 's':
-				step = atoll(optarg);
+				step = (walking_t)atoll(optarg);
 				break;
 			case 'S':
 				Silent = true;
@@ -78,8 +119,9 @@ struct options options_parse(int argc, char * argv[]) {
 		}
 	}
 
-	return (struct options) {
+	struct options options = {
 		aaccesses,
+		create,
 		end,
 		csvlog,
 		processes,
@@ -87,4 +129,26 @@ struct options options_parse(int argc, char * argv[]) {
 		step,
 		Silent
 	};
+
+	if (print_configuration)
+		options_print(&options);
+
+	return options;
+}
+
+#define CASE_ENUM2STRING(ENUM) case ENUM: return #ENUM
+const char * spawn_typeToString(enum spawn_type st) {
+	switch (st) {
+		CASE_ENUM2STRING(TREE);
+		CASE_ENUM2STRING(LINEAR);
+		default:
+		return NULL;
+	}
+}
+
+#define STRING2ENUM(SRC,ENUM) if (0 == strcasecmp(#ENUM, SRC)) return ENUM
+enum spawn_type spawn_typeFromString(const char * st) {
+	STRING2ENUM(st, TREE);
+	STRING2ENUM(st, LINEAR);
+	return CREATE;
 }

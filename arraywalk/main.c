@@ -29,29 +29,28 @@ static void verbose(const struct options * options, const char *format, ...) {
 	va_end(args);
 }
 
+static inline nsec_t timespecToNsec(struct timespec * t) {
+	return 1000 * 1000 * 1000 * t->tv_sec + t->tv_nsec;
+}
+
 // test for increasing cache sizes
 static void walk(const struct options * options) {
 	// bookkeeping
-	uint_least64_t timings[options->repetitions];
+	nsec_t timings[options->repetitions];
 	size_t repetitions_ctr;
 	struct timespec elapsed;
-	uint_least64_t totalnsec;
-	uint_least64_t new_avg = 0;
-	uint_least64_t old_avg = 0;
+	nsec_t totalnsec;
+	nsec_t new_avg = 0;
+	nsec_t old_avg = 0;
 	double stddev;
-	size_t array_len = 0;
+	walking_t array_len = 0;
 	struct walkArray * array;
-
-	// print timer resolution
-	clock_getres(CLOCK_MONOTONIC, &elapsed);
-	verbose(options, "Timer resolution: %ld seconds, %lu nanoseconds\n",
-			elapsed.tv_sec, elapsed.tv_nsec);
 
 	while((array_len += options->step) <= options->end) {
 		// array creation (timed)
 		totalnsec = 0;
 		elapsed = makeRandomWalkArray(array_len, &array);
-		totalnsec += 1000 * 1000 * 1000 * elapsed.tv_sec + elapsed.tv_nsec;
+		totalnsec += timespecToNsec(&elapsed);
 		if (array->size < 1024)
 			verbose(options, "%.6lu B", array->size);
 		else
@@ -68,7 +67,7 @@ static void walk(const struct options * options) {
 		repetitions_ctr = options->repetitions;
 		while (repetitions_ctr--) {
 			elapsed = walkArray(array, options->aaccesses);
-			timings[repetitions_ctr] = 1000 * 1000 * 1000 * elapsed.tv_sec + elapsed.tv_nsec;
+			timings[repetitions_ctr] = timespecToNsec(&elapsed);
 		}
 
 		// average
@@ -83,11 +82,11 @@ static void walk(const struct options * options) {
 		totalnsec = 0;
 		repetitions_ctr = options->repetitions;
 		while (repetitions_ctr--) {
-			uint_least64_t current = timings[repetitions_ctr];
+			nsec_t current = timings[repetitions_ctr];
 			current = current > new_avg ? current - new_avg : new_avg - current;
 			totalnsec += current * current;
 		}
-		stddev = sqrt(totalnsec / options->repetitions);
+		stddev = sqrt((double)(totalnsec / options->repetitions));
 
 		// report results
 		if (options->csvlog)
@@ -97,8 +96,8 @@ static void walk(const struct options * options) {
 				" | delta %+2.2lf%% (%"PRIuLEAST64" -> %"PRIuLEAST64")"
 				" | stddev %ld usec (%2.2lf%%)\n\n",
 				new_avg / 1000,
-				100 * ((double)new_avg - old_avg) / old_avg, old_avg, new_avg,
-				lround(stddev / 1000), 100 * stddev / new_avg
+				100 * (double)((new_avg - old_avg) / old_avg), old_avg, new_avg,
+				lround(stddev / 1000), 100 * stddev / (double)new_avg
 				);
 
 		// inform user in time about every iteration
@@ -110,39 +109,102 @@ static void walk(const struct options * options) {
 	}
 }
 
-// program entry point
-int main(int argc, char * argv[]) {
-	struct options options = options_parse(argc, argv);
-
-	// seed random at program startup
-	srand(time(NULL));
-
-	unsigned nchildren = 0;
+// create a new arraywalk child process
+// XXX exit when child creation fails, as test will yield unexpected results
+static pid_t spawnChildren(unsigned num) {
 	pid_t pid = 0;
-	for (int i = 0; i < options.processes; ++i) {
-		pid = fork();
-		switch (pid) {
+	while (num--) {
+		switch ((pid = fork())) {
 			case -1:
 				perror("child process creation");
+				exit(EXIT_FAILURE);
 				break;
 			case 0:
-				// child
-				walk(&options);
+				// child: do not spawn
+				goto stopSpawn;
 				break;
 			default:
-				// parent
-				++nchildren;
-				continue;
+				// parent: continue spawning
 				break;
 		}
-		// parent process uses 'continue' to finish creating its children
-		break;
 	}
+stopSpawn:
+	return pid;
+}
 
-	// parent waits for all successfully created children
-	if (pid)
+// create the desired amount of children all from the same parent
+static void linearSpawn(const struct options * options) {
+	unsigned nchildren = options->processes;
+	if(0 == spawnChildren(nchildren))
+		walk(options);
+	else
 		while (nchildren--)
 			wait(NULL);
+}
 
-	return 0;
+// create children in a tree-like fashion; i.e. children creating children
+// XXX assumes options.processes > 1
+static void treeSpawn(const struct options * options) {
+	// TODO: maybe introduce support for configurable branching factors
+	unsigned todo = options->processes - 1; // initial thread will also calculate
+	unsigned nchildren = 0;
+	do {
+		switch ((nchildren = todo % 2)) {
+			case 0:
+				nchildren = 2;
+			default:
+				// nchildren unmodified
+				break;
+		}
+
+		// if spawnChild returns, child creation was successful; i.e. pid >= 0
+		// parent breaks out loop and starts calculating;
+		// children continue to create their own children first
+		todo = (todo - nchildren) / nchildren;
+		if (spawnChildren(nchildren) > 0)
+			break;
+
+	} while (todo > 0);
+
+	walk(options);
+
+	// wait for children
+	while (nchildren--)
+		wait(NULL);
+}
+
+// program entry point
+int main(int argc, char * argv[]) {
+	struct timespec timer;
+	struct options options = options_parse(argc, argv);
+
+	// print timer resolution
+	clock_getres(CLOCK_MONOTONIC, &timer);
+	verbose(&options, "Timer resolution: %ld seconds, %lu nanoseconds\n",
+			timer.tv_sec, timer.tv_nsec);
+
+	// nothing to do
+	if (0 == options.processes)
+		return EXIT_SUCCESS;
+
+	// seed random at program startup
+	srand((unsigned)time(NULL));
+
+	// no children to spawn
+	if (1 == options.processes) {
+		walk(&options);
+		return EXIT_SUCCESS;
+	}
+
+	// multithreaded run
+	switch (options.create) {
+		case TREE:
+			treeSpawn(&options);
+			break;
+		case LINEAR:
+			linearSpawn(&options);
+			break;
+	}
+
+	return EXIT_SUCCESS;
 }
