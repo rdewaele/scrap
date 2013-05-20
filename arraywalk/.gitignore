@@ -1,6 +1,9 @@
 # compiled executable
 arraywalk
 
+# object files
+*.o
+
 # vim swap files
 *.swp
 
