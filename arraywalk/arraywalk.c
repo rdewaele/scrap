@@ -6,6 +6,23 @@
 #include <stdlib.h>
 #include <time.h>
 
+#ifdef TIGHTER_TIMED // less error-checking
+#define TIGHTLY_TIMED(bench_code, time_var) \
+	struct timespec start, stop; \
+	/* start the clock*/ \
+	(void)clock_gettime(CLOCK_MONOTONIC, &start); \
+	/* run the benchmark */ \
+	bench_code \
+	/* stop the clock */ \
+	(void)clock_gettime(CLOCK_MONOTONIC, &stop); \
+	/* check result sanity */ \
+	if (stop.tv_sec < start.tv_sec) \
+		fprintf(stderr, "TIMING ERROR: This experiment started SECONDS in the future ...\n"); \
+	else if (stop.tv_sec == start.tv_sec && stop.tv_nsec < start.tv_nsec) \
+		fprintf(stderr, "TIMING ERROR: This experiment started NANOSECONDS in the future ...\n"); \
+	/* report timing */ \
+	time_var = (struct timespec){ stop.tv_sec - start.tv_sec, stop.tv_nsec - start.tv_nsec }
+#else
 #define TIGHTLY_TIMED(bench_code, time_var) \
 	struct timespec start, stop; \
 	/* start the clock*/ \
@@ -23,6 +40,7 @@
 		fprintf(stderr, "TIMING ERROR: This experiment started NANOSECONDS in the future ...\n"); \
 	/* report timing */ \
 	time_var = (struct timespec){ stop.tv_sec - start.tv_sec, stop.tv_nsec - start.tv_nsec }
+#endif
 
 // Create a cycle using Sattolo's algorithm. This is the way the array will be
 // traversed in the benchmarks.

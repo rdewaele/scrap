@@ -17,6 +17,8 @@ struct options {
 	const enum spawn_type create;
 	// upper size limit for the benchmark's array
 	const walking_t end;
+	// cpu frequency to use in memory access cycles calculation
+	const float frequency;
 	// file to write Comma Separated Values to
 	FILE * csvlog;
 	// number of processes to run in parallel

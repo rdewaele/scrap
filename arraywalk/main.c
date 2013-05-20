@@ -15,9 +15,6 @@
 #include <time.h>
 #include <unistd.h>
 
-// TODO: autodection
-#define CLOCK_FREQ 2.2 
-
 // user reporting
 static void verbose(const struct options * options, const char *format, ...) {
 	va_list args;
@@ -58,7 +55,7 @@ static void walk(const struct options * options) {
 		else
 			verbose(options, "%.6lu KiB", array->size / 1024);
 
-		verbose(options, " (= %lu elements) randomized in %"PRIuLEAST64" usec | %lu reads:\n",
+		verbose(options, " (= %lu elements) randomized in %"PRINSEC" usec | %lu reads:\n",
 				array->len,
 				totalnsec / 1000,
 				options->aaccesses);
@@ -96,13 +93,28 @@ static void walk(const struct options * options) {
 		if (options->csvlog)
 			CSV_LogTimings(options->csvlog, array, new_avg, lround(stddev));
 
-		verbose(options, ">>>\t%"PRIuLEAST64" usec"
-				" | delta %+2.2lf%% (%"PRIuLEAST64" -> %"PRIuLEAST64")"
-				" | stddev %ld usec (%2.2lf%%)\n\n",
+		verbose(options, ">>>\t%"PRINSEC" usec"
+				" | delta %+2.2lf%%"
+				" (%"PRINSEC" -> %"PRINSEC")"
+				" | stddev %ld usec (%2.2lf%%)\n",
 				new_avg / 1000,
-				100 * (double)((new_avg - old_avg) / old_avg), old_avg, new_avg,
+				100 * (double)(new_avg - old_avg) / (double)old_avg,
+				old_avg, new_avg,
 				lround(stddev / 1000), 100 * stddev / (double)new_avg
 				);
+		nsec_t nsread_old = old_avg / options->aaccesses;
+		nsec_t nsread_new = new_avg / options->aaccesses;
+		verbose(options, ">>>\t~%"PRINSEC" nsec/read"
+				" | delta %+2.2lf%%"
+				" (%"PRINSEC" -> %"PRINSEC")"
+				" | ~%.2lf cycles/read"
+				" @ %.3f GHz\n",
+				nsread_new,
+				100 * (double)(nsread_new - nsread_old) / (double)nsread_old,
+				nsread_old, nsread_new,
+				(double)new_avg / ((double)options->aaccesses * options->frequency),
+				options->frequency);
+		verbose(options, "\n");
 
 		// inform user in time about every iteration
 		fflush(stdout);

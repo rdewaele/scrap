@@ -20,7 +20,7 @@
 //
 // (I)nformation about run configuration
 // -> this is a meta option, and not present in the option structure
-static const char * OPTSTR = "h?a:c:e:Il:p:r:s:S";
+static const char * OPTSTR = "h?a:c:e:f:Il:p:r:s:S";
 
 // 'end' default must (only) be lowered when it doesn't fit in walking_t
 #if WALKING_MAX >= 1 << 23
@@ -41,6 +41,7 @@ static const char * OPTSTR = "h?a:c:e:Il:p:r:s:S";
 static const unsigned AACCESSES = 4 * 1024 * 1024;
 static const enum spawn_type CREATE = TREE;
 static const walking_t END = END_INIT;
+static const float FREQUENCY = 1;
 static FILE * CSVLOG = NULL;
 static const unsigned PROCESSES = 1;
 static const unsigned REPETITIONS = 50;
@@ -54,6 +55,7 @@ static void options_help(const char * name) {
 	fprintf(stderr, "-a\tarray accesses to perform (default: %u)\n", AACCESSES);
 	fprintf(stderr, "-c\tthread spawn method (default: %s)\n", spawn_typeToString(CREATE));
 	fprintf(stderr, "-e\tmaximum array size (default: %"PRIWALKING")\n", END);
+	fprintf(stderr, "-f\tcpu clock frequency to base cycle calculations on (default: %.3f GHz)\n", FREQUENCY);
 	fprintf(stderr, "-I\tprint run configuration to stdout at program startup\n");
 	fprintf(stderr, "-l\tlog file to write CSV data to (default: <none>)\n");
 	fprintf(stderr, "-p\tnumber of simultaneous tests to start (default: %u)\n", PROCESSES);
@@ -68,6 +70,7 @@ static void options_print(const struct options * options) {
 			"array accesses to perform: %u\n"
 			"thread spawn method: %s\n"
 			"maximum array size: %"PRIWALKING"\n"
+			"cpu clock frequency: %.3f\n"
 			"CSV log base name: %s\n"
 			"operating threads: %u\n"
 			"single test configuration repeat: %u\n"
@@ -77,6 +80,7 @@ static void options_print(const struct options * options) {
 			options->aaccesses,
 			spawn_typeToString(options->create),
 			options->end,
+			options->frequency,
 			"<none>", //TODO: base name for logs
 			options->processes,
 			options->repetitions,
@@ -92,6 +96,7 @@ struct options options_parse(int argc, char * argv[]) {
 	unsigned aaccesses = AACCESSES;
 	enum spawn_type create = CREATE;
 	walking_t end = END;
+	float frequency = FREQUENCY;
 	FILE * csvlog = CSVLOG;
 	unsigned processes = PROCESSES;
 	unsigned repetitions = REPETITIONS;
@@ -110,6 +115,9 @@ struct options options_parse(int argc, char * argv[]) {
 				break;
 			case 'e':
 				end = (walking_t)atoll(optarg);
+				break;
+			case 'f':
+				frequency = (float)atof(optarg);
 				break;
 			case 'I':
 				print_configuration = true;
@@ -139,6 +147,7 @@ struct options options_parse(int argc, char * argv[]) {
 		aaccesses,
 		create,
 		end,
+		frequency,
 		csvlog,
 		processes,
 		repetitions,
