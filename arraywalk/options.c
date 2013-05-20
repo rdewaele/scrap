@@ -35,7 +35,7 @@ static const char * OPTSTR = "h?a:c:e:Il:p:r:s:S";
 #if WALKING_MAX >= 1 << 12
 #define STEP_INIT 1 << 12
 #else // < 2^12
-#define STEP_INIT ((1 << 8) - 1)
+#define STEP_INIT 1 << 4
 #endif
 
 static const unsigned AACCESSES = 4 * 1024 * 1024;

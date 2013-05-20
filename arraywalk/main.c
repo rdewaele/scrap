@@ -46,7 +46,9 @@ static void walk(const struct options * options) {
 	walking_t array_len = 0;
 	struct walkArray * array;
 
-	while ((array_len = WALKING_T_CAST(array_len + options->step)) <= options->end) {
+	// check for overflow before actually incrementing the array size
+	while (WALKING_T_CAST(array_len + options->step) > array_len &&
+			(array_len = WALKING_T_CAST(array_len + options->step)) <= options->end) {
 		// array creation (timed)
 		totalnsec = 0;
 		elapsed = makeRandomWalkArray(array_len, &array);
@@ -77,6 +79,8 @@ static void walk(const struct options * options) {
 			totalnsec += timings[repetitions_ctr];
 		// XXX whole division should be OK: timings are in the millions of nsec
 		new_avg = totalnsec / options->repetitions;
+		if (0 == old_avg)
+			old_avg = new_avg;
 
 		// standard deviation
 		totalnsec = 0;
