@@ -48,7 +48,7 @@ struct timespec makeRandomWalkArray(walking_t len, struct walkArray ** result) {
 	walking_t swap;
 	TIGHTLY_TIMED(
 	for (i = 0; i < len - 1; ++i) {
-		rnd = randMinMax(i + 1, len - 1);
+		rnd = randMinMax(WALKING_T_CAST(i + 1), WALKING_T_CAST(len - 1));
 		swap = array[i];
 		array[i] = array[rnd];
 		array[rnd] = swap;
@@ -74,7 +74,7 @@ struct timespec walkArray(struct walkArray * array, size_t steps) {
 	struct timespec elapsed;
 	walking_t * a = array->array;
 	// make idx volatile to deny code omission by compiler optimizations
-	volatile walking_t idx = randMinMax(0, array->len - 1);
+	volatile walking_t idx = randMinMax(0, WALKING_T_CAST(array->len - 1));
 
 	TIGHTLY_TIMED(while(steps--) { idx = a[idx]; }, elapsed);
 	/* On my system, gcc -03 generates the following code for the hot loop:

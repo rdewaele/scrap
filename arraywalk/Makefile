@@ -3,6 +3,7 @@ PROGRAM = arraywalk
 # effect.
 CFLAGS := -std=c99 -D_POSIX_C_SOURCE=200809L -W -Wall -Wextra -pedantic \
 	-O3 -funroll-loops \
+	-DNDEBUG \
 	-Wconversion -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align \
 	-Wwrite-strings -Wno-aggregate-return \
 	$(CFLAGS)

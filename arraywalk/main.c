@@ -46,7 +46,7 @@ static void walk(const struct options * options) {
 	walking_t array_len = 0;
 	struct walkArray * array;
 
-	while((array_len += options->step) <= options->end) {
+	while ((array_len = WALKING_T_CAST(array_len + options->step)) <= options->end) {
 		// array creation (timed)
 		totalnsec = 0;
 		elapsed = makeRandomWalkArray(array_len, &array);

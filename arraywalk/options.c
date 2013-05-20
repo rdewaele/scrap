@@ -22,13 +22,29 @@
 // -> this is a meta option, and not present in the option structure
 static const char * OPTSTR = "h?a:c:e:Il:p:r:s:S";
 
+// 'end' default must (only) be lowered when it doesn't fit in walking_t
+#if WALKING_MAX >= 1 << 23
+#define END_INIT 1 << 23
+#elif WALKING_MAX >= ((1 << 16) - 1)
+#define END_INIT ((1 << 16) - 1)
+#else // < 2^16
+#define END_INIT ((1 << 8) - 1)
+#endif
+
+// 'step' default must (only) be lowered when it doesn't fit in walking_t
+#if WALKING_MAX >= 1 << 12
+#define STEP_INIT 1 << 12
+#else // < 2^12
+#define STEP_INIT ((1 << 8) - 1)
+#endif
+
 static const unsigned AACCESSES = 4 * 1024 * 1024;
 static const enum spawn_type CREATE = TREE;
-static const walking_t END = 8 * 1024 * 1024;
+static const walking_t END = END_INIT;
 static FILE * CSVLOG = NULL;
-static const int PROCESSES = 1;
+static const unsigned PROCESSES = 1;
 static const unsigned REPETITIONS = 50;
-static const walking_t STEP = 4 * 1024;
+static const walking_t STEP = STEP_INIT;
 static const bool SILENT = false;
 
 static void options_help(const char * name) {
@@ -87,7 +103,7 @@ struct options options_parse(int argc, char * argv[]) {
 	while (-1 != (opt = getopt(argc, argv, OPTSTR))) {
 		switch (opt) {
 			case 'a':
-				aaccesses = (walking_t)atoll(optarg);
+				aaccesses = (unsigned)atol(optarg);
 				break;
 			case 'c':
 				create = spawn_typeFromString(optarg);
@@ -102,10 +118,10 @@ struct options options_parse(int argc, char * argv[]) {
 				csvlog = fopen(optarg, "w");
 				break;
 			case 'p':
-				processes = (unsigned)atoi(optarg);
+				processes = (unsigned)atol(optarg);
 				break;
 			case 'r':
-				repetitions = (walking_t)atoll(optarg);
+				repetitions = (unsigned)atol(optarg);
 				break;
 			case 's':
 				step = (walking_t)atoll(optarg);
