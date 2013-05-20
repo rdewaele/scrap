@@ -9,18 +9,9 @@
 #ifdef TIGHTER_TIMED // less error-checking
 #define TIGHTLY_TIMED(bench_code, time_var) \
 	struct timespec start, stop; \
-	/* start the clock*/ \
 	(void)clock_gettime(CLOCK_MONOTONIC, &start); \
-	/* run the benchmark */ \
 	bench_code \
-	/* stop the clock */ \
 	(void)clock_gettime(CLOCK_MONOTONIC, &stop); \
-	/* check result sanity */ \
-	if (stop.tv_sec < start.tv_sec) \
-		fprintf(stderr, "TIMING ERROR: This experiment started SECONDS in the future ...\n"); \
-	else if (stop.tv_sec == start.tv_sec && stop.tv_nsec < start.tv_nsec) \
-		fprintf(stderr, "TIMING ERROR: This experiment started NANOSECONDS in the future ...\n"); \
-	/* report timing */ \
 	time_var = (struct timespec){ stop.tv_sec - start.tv_sec, stop.tv_nsec - start.tv_nsec }
 #else
 #define TIGHTLY_TIMED(bench_code, time_var) \
@@ -88,57 +79,23 @@ void freeWalkArray(struct walkArray * array) {
 }
 
 // walk the array as encoded by makeRandomWalkArray(size_t size)
-struct timespec walkArray(struct walkArray * array, size_t steps) {
-	struct timespec elapsed;
+walking_t walkArray(struct walkArray * array, size_t steps, struct timespec * elapsed) {
 	walking_t * a = array->array;
-	// make idx volatile to deny code omission by compiler optimizations
-	volatile walking_t idx = randMinMax(0, WALKING_T_CAST(array->len - 1));
+	// XXX do no just make idx volatile to prevent code omission by compiler
+	// optimizations: having idx volatile means that idx must be written to,
+	// which we don't care about; we only want <reads>
+	// OTOH, not having to write may enable pipelined solutions that resilt in
+	// optimistic results, which is also not okay
+	// thus far, not enabling volatile and compiling with -O0 (gcc) results in
+	// expected timings on my develpment machine, as they are documented by intel
 
-	TIGHTLY_TIMED(while(steps--) { idx = a[idx]; }, elapsed);
-	/* On my system, gcc -03 generates the following code for the hot loop:
-	 *
-	 * 400fd0:       48 8b 54 24 38          mov    0x38(%rsp),%rdx
-	 * 400fd5:       48 83 e8 01             sub    $0x1,%rax
-	 * 400fd9:       48 83 f8 ff             cmp    $0xffffffffffffffff,%rax
-	 * 400fdd:       8b 14 93                mov    (%rbx,%rdx,4),%edx
-	 * 400fe0:       48 89 54 24 38          mov    %rdx,0x38(%rsp)
-	 * 400fe5:       75 e9                   jne    400fd0 <walkArray+0x40>
-	 *
-	 * We can see that half of this code is loop administration!
-	 *
-	 * Again on my system, gcc -03 -funroll-loops generates the following code
-	 * for the hot loop:
-	 *
-	 * 401582:       48 8b 44 24 38          mov    0x38(%rsp),%rax
-	 * 401587:       49 83 e9 08             sub    $0x8,%r9
-	 * 40158b:       49 83 f9 ff             cmp    $0xffffffffffffffff,%r9
-	 * 40158f:       8b 14 83                mov    (%rbx,%rax,4),%edx
-	 * 401592:       48 89 54 24 38          mov    %rdx,0x38(%rsp)
-	 * 401597:       48 8b 4c 24 38          mov    0x38(%rsp),%rcx
-	 * 40159c:       8b 34 8b                mov    (%rbx,%rcx,4),%esi
-	 * 40159f:       48 89 74 24 38          mov    %rsi,0x38(%rsp)
-	 * 4015a4:       48 8b 7c 24 38          mov    0x38(%rsp),%rdi
-	 * 4015a9:       44 8b 04 bb             mov    (%rbx,%rdi,4),%r8d
-	 * 4015ad:       4c 89 44 24 38          mov    %r8,0x38(%rsp)
-	 * 4015b2:       4c 8b 54 24 38          mov    0x38(%rsp),%r10
-	 * 4015b7:       46 8b 1c 93             mov    (%rbx,%r10,4),%r11d
-	 * 4015bb:       4c 89 5c 24 38          mov    %r11,0x38(%rsp)
-	 * 4015c0:       48 8b 6c 24 38          mov    0x38(%rsp),%rbp
-	 * 4015c5:       8b 04 ab                mov    (%rbx,%rbp,4),%eax
-	 * 4015c8:       48 89 44 24 38          mov    %rax,0x38(%rsp)
-	 * 4015cd:       48 8b 54 24 38          mov    0x38(%rsp),%rdx
-	 * 4015d2:       8b 0c 93                mov    (%rbx,%rdx,4),%ecx
-	 * 4015d5:       48 89 4c 24 38          mov    %rcx,0x38(%rsp)
-	 * 4015da:       48 8b 74 24 38          mov    0x38(%rsp),%rsi
-	 * 4015df:       8b 3c b3                mov    (%rbx,%rsi,4),%edi
-	 * 4015e2:       48 89 7c 24 38          mov    %rdi,0x38(%rsp)
-	 * 4015e7:       4c 8b 44 24 38          mov    0x38(%rsp),%r8
-	 * 4015ec:       46 8b 14 83             mov    (%rbx,%r8,4),%r10d
-	 * 4015f0:       4c 89 54 24 38          mov    %r10,0x38(%rsp)
-	 * 4015f5:       75 8b                   jne    401582 <walkArray+0x112>
-	 *
-	 * As we can see, the loop administration overhead is now a lot smaller.
-	 * This did not result in a measurable improvement however.
-	 */
-	return elapsed;
+	// return final idx to caller to prevent code omission by compiler
+#if VOLATILE
+	volatile walking_t idx;
+#else
+	register walking_t idx;
+#endif
+	idx = randMinMax(0, WALKING_T_CAST(array->len - 1));
+	TIGHTLY_TIMED(while(steps--) { idx = a[idx]; }, (*elapsed));
+	return idx;
 }

@@ -61,11 +61,12 @@ static void walk(const struct options * options) {
 				options->aaccesses);
 
 		// test case warmup (helps reducing variance)
-		(void) walkArray(array, options->aaccesses);
+		walkArray(array, options->aaccesses, &elapsed);
 		// test each case 'repetions' times (timed)
 		repetitions_ctr = options->repetitions;
+		walking_t fidx = 0;
 		while (repetitions_ctr--) {
-			elapsed = walkArray(array, options->aaccesses);
+			fidx = walkArray(array, options->aaccesses, &elapsed);
 			timings[repetitions_ctr] = timespecToNsec(&elapsed);
 		}
 
@@ -108,12 +109,14 @@ static void walk(const struct options * options) {
 				" | delta %+2.2lf%%"
 				" (%"PRINSEC" -> %"PRINSEC")"
 				" | ~%.2lf cycles/read"
-				" @ %.3f GHz\n",
+				" @ %.3f GHz"
+				" | final index: %"PRIWALKING"\n",
 				nsread_new,
 				100 * (double)(nsread_new - nsread_old) / (double)nsread_old,
 				nsread_old, nsread_new,
 				(double)new_avg / ((double)options->aaccesses * options->frequency),
-				options->frequency);
+				options->frequency,
+				fidx);
 		verbose(options, "\n");
 
 		// inform user in time about every iteration

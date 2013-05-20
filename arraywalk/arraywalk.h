@@ -62,5 +62,6 @@ struct timespec makeRandomWalkArray(walking_t len, struct walkArray ** result);
 // Free the walkArray structure.
 void freeWalkArray(struct walkArray * array);
 
-// Walk the array as encoded by makeRandomWalkArray(size_t len).
-struct timespec walkArray(struct walkArray * array, size_t steps);
+// Walk the array as encoded by makeRandomWalkArray(size_t len), store timing
+// information in 'elapsed' (must be valid), and return final index.
+walking_t walkArray(struct walkArray * array, size_t steps, struct timespec * elapsed);
