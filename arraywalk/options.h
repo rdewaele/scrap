@@ -19,6 +19,8 @@ struct options {
 	const walking_t end;
 	// cpu frequency to use in memory access cycles calculation
 	const float frequency;
+	// base filename for csv files (pid will be appended)
+	char * csvlogname;
 	// file to write Comma Separated Values to
 	FILE * csvlog;
 	// number of processes to run in parallel

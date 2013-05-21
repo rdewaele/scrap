@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <strings.h>
 #include <unistd.h>
 
@@ -42,7 +43,7 @@ static const unsigned AACCESSES = 4 * 1024 * 1024;
 static const enum spawn_type CREATE = TREE;
 static const walking_t END = END_INIT;
 static const float FREQUENCY = 1;
-static FILE * CSVLOG = NULL;
+static char * CSVLOGNAME = NULL;
 static const unsigned PROCESSES = 1;
 static const unsigned REPETITIONS = 50;
 static const walking_t STEP = STEP_INIT;
@@ -57,7 +58,8 @@ static void options_help(const char * name) {
 	fprintf(stderr, "-e\tmaximum array size (default: %"PRIWALKING")\n", END);
 	fprintf(stderr, "-f\tcpu clock frequency to base cycle calculations on (default: %.3f GHz)\n", FREQUENCY);
 	fprintf(stderr, "-I\tprint run configuration to stdout at program startup\n");
-	fprintf(stderr, "-l\tlog file to write CSV data to (default: <none>)\n");
+	fprintf(stderr, "-l\tCSV log basic filename (process id's will be appended) (default: %s)\n",
+			CSVLOGNAME ? CSVLOGNAME : "<none>");
 	fprintf(stderr, "-p\tnumber of simultaneous tests to start (default: %u)\n", PROCESSES);
 	fprintf(stderr, "-r\tnumber of times to repeat a single test instance (default: %u)\n", REPETITIONS);
 	fprintf(stderr, "-s\tincrease test array linearly by this amount (default: %"PRIWALKING")\n", STEP);
@@ -81,12 +83,24 @@ static void options_print(const struct options * options) {
 			spawn_typeToString(options->create),
 			options->end,
 			options->frequency,
-			"<none>", //TODO: base name for logs
+			options->csvlogname ? options->csvlogname : "<no csv logging>",
 			options->processes,
 			options->repetitions,
 			options->step,
 			options->Silent ? "on" : "off"
 			);
+}
+
+void options_free(struct options * options) {
+	if (options->csvlogname && options->csvlogname != CSVLOGNAME) {
+		free(options->csvlogname);
+		options->csvlogname = NULL;
+	}
+
+	if (options->csvlog) {
+		fclose(options->csvlog);
+		options->csvlog = NULL;
+	}
 }
 
 // TODO error handling
@@ -97,7 +111,7 @@ struct options options_parse(int argc, char * argv[]) {
 	enum spawn_type create = CREATE;
 	walking_t end = END;
 	float frequency = FREQUENCY;
-	FILE * csvlog = CSVLOG;
+	char * csvlogname = CSVLOGNAME;
 	unsigned processes = PROCESSES;
 	unsigned repetitions = REPETITIONS;
 	walking_t step = STEP;
@@ -123,7 +137,7 @@ struct options options_parse(int argc, char * argv[]) {
 				print_configuration = true;
 				break;
 			case 'l':
-				csvlog = fopen(optarg, "w");
+				csvlogname = strdup(optarg);
 				break;
 			case 'p':
 				processes = (unsigned)atol(optarg);
@@ -148,7 +162,8 @@ struct options options_parse(int argc, char * argv[]) {
 		create,
 		end,
 		frequency,
-		csvlog,
+		csvlogname,
+		NULL,
 		processes,
 		repetitions,
 		step,

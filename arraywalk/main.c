@@ -5,6 +5,7 @@
 
 #include <errno.h>
 #include <inttypes.h>
+#include <limits.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -31,7 +32,25 @@ static inline nsec_t timespecToNsec(struct timespec * t) {
 }
 
 // test for increasing cache sizes
-static void walk(const struct options * options) {
+static void walk(struct options * options) {
+	// pid used for logging
+	const pid_t pid = getpid();
+	// flag to close log file if we opened it ourselves
+	bool openedFile = false;
+	// TODO: remove csvlog from options, it doesn't make sense anymore for this
+	// multithreaded program
+	if (options->csvlogname && !options->csvlog) {
+		const char * name = options->csvlogname;
+		// in principle, allocation size is a big overestimate,
+		// but still small in absolute numbers
+		const size_t tmpsz = strlen(name) + CHAR_BIT * sizeof(pid_t);
+		char * tmp = malloc(tmpsz);
+		snprintf(tmp, tmpsz, "%s_%lld.csv", name, (long long)pid);
+		options->csvlog = fopen(tmp, "w");
+		free(tmp);
+		openedFile = true;
+	}
+
 	// bookkeeping
 	nsec_t timings[options->repetitions];
 	size_t repetitions_ctr;
@@ -92,7 +111,7 @@ static void walk(const struct options * options) {
 
 		// report results
 		if (options->csvlog)
-			CSV_LogTimings(options->csvlog, array, new_avg, lround(stddev));
+			CSV_LogTimings(options->csvlog, pid, array, new_avg, lround(stddev));
 
 		verbose(options, ">>>\t%"PRINSEC" usec"
 				" | delta %+2.2lf%%"
@@ -126,6 +145,11 @@ static void walk(const struct options * options) {
 		old_avg = new_avg;
 		freeWalkArray(array);
 	}
+
+	if (openedFile) {
+		fclose(options->csvlog);
+		options->csvlog = NULL;
+	}
 }
 
 // create a new arraywalk child process
@@ -152,7 +176,7 @@ stopSpawn:
 }
 
 // create the desired amount of children all from the same parent
-static void linearSpawn(const struct options * options) {
+static void linearSpawn(struct options * options) {
 	unsigned nchildren = options->processes;
 	if(0 == spawnChildren(nchildren))
 		walk(options);
@@ -163,7 +187,7 @@ static void linearSpawn(const struct options * options) {
 
 // create children in a tree-like fashion; i.e. children creating children
 // XXX assumes options.processes > 1
-static void treeSpawn(const struct options * options) {
+static void treeSpawn(struct options * options) {
 	// TODO: maybe introduce support for configurable branching factors
 	unsigned todo = options->processes - 1; // initial thread will also calculate
 	unsigned nchildren = 0;
